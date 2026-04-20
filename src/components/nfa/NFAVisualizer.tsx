@@ -27,12 +27,18 @@ const edgeTypes = { nfaTransition: NFAEdge };
 
 // ── Dagre layout ─────────────────────────────────────────────────────────────
 
-const NODE_WIDTH = 56;
-const NODE_HEIGHT = 56;
+const NODE_WIDTH = 64;
+const NODE_HEIGHT = 64;
 
 function computeLayout(nfa: NFA, isDFA = false): { nodes: Node[]; edges: Edge[] } {
   const g = new dagre.graphlib.Graph({ multigraph: true });
-  g.setGraph({ rankdir: 'LR', nodesep: 40, ranksep: 70, edgesep: 20 });
+  // Aggressively increase separation for maximum vertical spread and "airy" look
+  g.setGraph({ 
+    rankdir: 'LR', 
+    nodesep: 250,    // Drastically increased vertical space
+    ranksep: 100,    // Short horizontal space
+    edgesep: 80      // Space between edges
+  });
   g.setDefaultEdgeLabel(() => ({}));
 
   for (const state of nfa.states) {
@@ -84,6 +90,29 @@ function computeLayout(nfa: NFA, isDFA = false): { nodes: Node[]; edges: Edge[] 
     
     const label = symbols.join(', ');
     const isEpsilon = symbols.every((s) => s === 'ε');
+
+    // Aggressive dynamic curvature with jitter to ensure arrows are distinct
+    let curvature = 0;
+    if (!isSelfLoop) {
+      // Deterministic jitter based on edge index to spread parallel/overlapping lines
+      const jitter = (edgeIdx % 3) * 15;
+
+      if (isBidirectional) {
+        curvature = 60 + jitter; 
+      } else {
+        const fromPos = g.node(from);
+        const toPos = g.node(to);
+        const dx = Math.abs(toPos.x - fromPos.x);
+        
+        if (dx > 250) {
+          curvature = 60 + jitter + (dx / 300) * 20;
+        } else if (dx > 80) {
+          curvature = 45 + jitter;
+        } else {
+          curvature = 25 + jitter;
+        }
+      }
+    }
     
     rfEdges.push({
       id: `edge-${edgeIdx++}`,
@@ -96,8 +125,7 @@ function computeLayout(nfa: NFA, isDFA = false): { nodes: Node[]; edges: Edge[] 
         isDFAMode: isDFA, 
         source: from, 
         target: to,
-        // If bidirectional, apply curvature to separate paths
-        curvature: isBidirectional ? 35 : 0 
+        curvature
       },
       ...(isSelfLoop
         ? { sourceHandle: 'top-source', targetHandle: 'top' }
@@ -230,13 +258,13 @@ export default function NFAVisualizer({ nfa }: NFAVisualizerProps) {
           <defs>
             <marker
               id="arrowhead"
-              markerWidth="10"
-              markerHeight="7"
-              refX="9"
-              refY="3.5"
+              markerWidth="12"
+              markerHeight="9"
+              refX="12"
+              refY="4.5"
               orient="auto"
             >
-              <polygon points="0 0, 10 3.5, 0 7" fill="#4f46e5" />
+              <polygon points="0 0, 12 4.5, 0 9" fill="#4f46e5" />
             </marker>
           </defs>
         </svg>
@@ -249,7 +277,7 @@ export default function NFAVisualizer({ nfa }: NFAVisualizerProps) {
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
-          fitViewOptions={{ padding: 0.2, minZoom: 0.5, maxZoom: 1.5 }}
+          fitViewOptions={{ padding: 0.4, minZoom: 0.5, maxZoom: 1.5 }}
           minZoom={0.5}
           maxZoom={2}
           proOptions={{ hideAttribution: true }}

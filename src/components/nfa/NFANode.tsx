@@ -63,9 +63,9 @@ function NFANode({ data }: { data: NFANodeData }) {
   return (
     <>
       {/* Left handle — for incoming regular transitions */}
-      <Handle type="target" position={Position.Left} id="left" style={{ opacity: 0 }} />
+      <Handle type="target" position={Position.Left} id="left" style={{ left: '-2px', opacity: 0, background: 'transparent', border: 'none' }} />
       {/* Top handle — for self-loop transitions */}
-      <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0 }} />
+      <Handle type="target" position={Position.Top} id="top" style={{ top: '-2px', opacity: 0, background: 'transparent', border: 'none' }} />
 
       {/* Outer circle */}
       <motion.div
@@ -73,26 +73,26 @@ function NFANode({ data }: { data: NFANodeData }) {
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         className={`
           relative flex items-center justify-center
-          w-12 h-12 rounded-full border-2 ${outerRing}
+          w-16 h-16 rounded-full border-2 ${outerRing}
           shadow-md transition-all duration-200
         `}
         style={{ backdropFilter: 'blur(8px)' }}
       >
         {/* Accept state double-ring */}
         {isAccept && (
-          <div className="absolute inset-1 rounded-full border-2 border-emerald-400/70 pointer-events-none" />
+          <div className="absolute inset-1.5 rounded-full border-2 border-emerald-400/70 pointer-events-none" />
         )}
 
         {/* Inner label */}
-        <div className={`${innerColor} rounded-full w-8 h-8 flex items-center justify-center transition-colors duration-200`}>
-          <span className={`text-[10px] font-bold mono ${textColor} transition-colors duration-200`}>{label}</span>
+        <div className={`${innerColor} rounded-full w-10 h-10 flex items-center justify-center transition-colors duration-200`}>
+          <span className={`text-[11px] font-bold mono ${textColor} transition-colors duration-200`}>{label}</span>
         </div>
       </motion.div>
 
       {/* Right handle — for outgoing regular transitions */}
-      <Handle type="source" position={Position.Right} id="right" style={{ opacity: 0 }} />
+      <Handle type="source" position={Position.Right} id="right" style={{ right: '-2px', opacity: 0, background: 'transparent', border: 'none' }} />
       {/* Top source handle — for self-loop outgoing */}
-      <Handle type="source" position={Position.Top} id="top-source" style={{ opacity: 0 }} />
+      <Handle type="source" position={Position.Top} id="top-source" style={{ top: '-2px', opacity: 0, background: 'transparent', border: 'none' }} />
     </>
   );
 }
