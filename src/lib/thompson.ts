@@ -106,12 +106,29 @@ function kleeneFrag(f: Fragment): Fragment {
   };
 }
 
-/** Plus (one or more): f . f* */
+/** Plus (one or more): same as f* but without the bypass from start to accept.
+ *  Construction:
+ *    new start  --ε-->  f.start
+ *    f.accept   --ε-->  f.start   (loop: repeat)
+ *    f.accept   --ε-->  new accept (exit)
+ *  This avoids cloning and keeps the state count minimal.
+ */
 function plusFrag(f: Fragment): Fragment {
-  // We need a fresh copy for the star part — clone state IDs
-  const star = kleeneFrag(cloneFrag(f));
-  return concatFrag(f, star);
+  const s = freshId();
+  const a = freshId();
+  return {
+    start: s,
+    accept: a,
+    states: [...f.states, makeState(s), makeState(a)],
+    transitions: [
+      ...f.transitions,
+      makeTransition(s, f.start, null),        // enter fragment
+      makeTransition(f.accept, f.start, null), // loop back (one-or-more)
+      makeTransition(f.accept, a, null),       // exit to accept
+    ],
+  };
 }
+
 
 /** Optional (zero or one): f | ε */
 function optionalFrag(f: Fragment): Fragment {

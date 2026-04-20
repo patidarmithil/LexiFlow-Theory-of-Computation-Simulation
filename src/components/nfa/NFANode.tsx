@@ -1,8 +1,8 @@
 /**
- * NFANode.tsx — Custom React Flow node for NFA states.
+ * NFANode.tsx — Custom React Flow node for NFA/DFA states.
  *
  * Variants:
- *   - Start state:  blue ring
+ *   - Start state:  blue/amber ring (NFA/DFA)
  *   - Accept state: double ring (emerald)
  *   - Start+Accept: both
  *   - Normal:       slate
@@ -17,23 +17,36 @@ interface NFANodeData {
   isAccept: boolean;
   isActive?: boolean;
   isHovered?: boolean;
+  isDFAMode?: boolean;
 }
 
 function NFANode({ data }: { data: NFANodeData }) {
-  const { label, isStart, isAccept, isActive, isHovered } = data;
+  const { label, isStart, isAccept, isActive, isHovered, isDFAMode } = data;
 
   let outerRing = 'border-slate-300 bg-white/70';
   let innerColor = 'bg-slate-100/80';
   let textColor = 'text-slate-700';
 
   if (isStart && isAccept) {
-    outerRing = 'border-violet-400 bg-violet-50/70';
-    innerColor = 'bg-violet-100/60';
-    textColor = 'text-violet-800';
+    if (isDFAMode) {
+      outerRing = 'border-amber-400 bg-amber-50/70';
+      innerColor = 'bg-amber-100/60';
+      textColor = 'text-amber-800';
+    } else {
+      outerRing = 'border-violet-400 bg-violet-50/70';
+      innerColor = 'bg-violet-100/60';
+      textColor = 'text-violet-800';
+    }
   } else if (isStart) {
-    outerRing = 'border-blue-400 bg-blue-50/70';
-    innerColor = 'bg-blue-100/60';
-    textColor = 'text-blue-800';
+    if (isDFAMode) {
+      outerRing = 'border-amber-400 bg-amber-50/70';
+      innerColor = 'bg-amber-100/60';
+      textColor = 'text-amber-800';
+    } else {
+      outerRing = 'border-blue-400 bg-blue-50/70';
+      innerColor = 'bg-blue-100/60';
+      textColor = 'text-blue-800';
+    }
   } else if (isAccept) {
     outerRing = 'border-emerald-400 bg-emerald-50/70';
     innerColor = 'bg-emerald-100/60';
@@ -49,7 +62,10 @@ function NFANode({ data }: { data: NFANodeData }) {
 
   return (
     <>
-      <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
+      {/* Left handle — for incoming regular transitions */}
+      <Handle type="target" position={Position.Left} id="left" style={{ opacity: 0 }} />
+      {/* Top handle — for self-loop transitions */}
+      <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0 }} />
 
       {/* Outer circle */}
       <motion.div
@@ -73,7 +89,10 @@ function NFANode({ data }: { data: NFANodeData }) {
         </div>
       </motion.div>
 
-      <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
+      {/* Right handle — for outgoing regular transitions */}
+      <Handle type="source" position={Position.Right} id="right" style={{ opacity: 0 }} />
+      {/* Top source handle — for self-loop outgoing */}
+      <Handle type="source" position={Position.Top} id="top-source" style={{ opacity: 0 }} />
     </>
   );
 }

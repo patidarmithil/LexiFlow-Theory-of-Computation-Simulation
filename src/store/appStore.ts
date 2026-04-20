@@ -14,7 +14,11 @@ interface AppState {
 
   // ── Pipeline outputs ──────────────────────────────────────────
   nfa: NFA | null;
+  dfa: NFA | null;
   cfg: CFG | null;
+
+  // ── Canvas view ───────────────────────────────────────────────
+  canvasView: 'nfa' | 'dfa';
 
   // ── Derivation ────────────────────────────────────────────────
   derivationSteps: DerivationStep[];
@@ -35,7 +39,9 @@ interface AppState {
   setRegexInput: (v: string) => void;
   setTestString: (v: string) => void;
   setNFA: (nfa: NFA) => void;
+  setDFA: (dfa: NFA) => void;
   setCFG: (cfg: CFG) => void;
+  setCanvasView: (view: 'nfa' | 'dfa') => void;
   setPipelineStatus: (s: PipelineStatus) => void;
   setError: (e: string | null) => void;
   setDerivation: (
@@ -64,7 +70,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   regexInput: '',
   testString: '',
   nfa: null,
+  dfa: null,
   cfg: null,
+  canvasView: 'nfa',
   derivationSteps: [],
   currentStep: -1,
   isPlaying: false,
@@ -79,7 +87,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   setRegexInput: (v) => set({ regexInput: v }),
   setTestString: (v) => set({ testString: v }),
   setNFA: (nfa) => set({ nfa }),
+  setDFA: (dfa) => set({ dfa }),
   setCFG: (cfg) => set({ cfg }),
+  setCanvasView: (view) => set({ canvasView: view }),
   setPipelineStatus: (s) => set({ pipelineStatus: s }),
   setError: (e) => set({ error: e }),
   setDerivation: (steps, found, reason) =>
@@ -121,7 +131,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   reset: () =>
     set({
       nfa: null,
+      dfa: null,
       cfg: null,
+      canvasView: 'nfa',
       derivationSteps: [],
       currentStep: -1,
       isPlaying: false,

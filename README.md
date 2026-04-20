@@ -29,3 +29,4 @@ An interactive visualizer and conversion engine designed to bridge the gap betwe
    - **Logic Sidebar**: Toggle between **Rules View** (production format) and **Table View** (formal transition matrix) to understand the mathematical mapping.
 3. **Test a String**: Type a string in the "Test String" field in the bottom panel (e.g., `aabb`).
 4. **Interactive Playback**: Hit **Derive**. Use the playback pill at the bottom of the trace panel to scrub through the derivation steps visually and verify the acceptance of the string.
+

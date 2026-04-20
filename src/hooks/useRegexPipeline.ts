@@ -1,18 +1,20 @@
 /**
  * useRegexPipeline.ts
- * Orchestrates: RE string → NFA → CFG
+ * Orchestrates: RE string → NFA → DFA → CFG
  * Reads/writes via the Zustand store.
  */
 import { useCallback } from 'react';
 import { useAppStore } from '../store/appStore';
 import { regexToNFA } from '../lib/thompson';
 import { nfaToCFG } from '../lib/nfa-to-cfg';
+import { nfaToDFA } from '../lib/nfa-to-dfa';
 
 export function useRegexPipeline() {
   const {
     regexInput,
     setPipelineStatus,
     setNFA,
+    setDFA,
     setCFG,
     setError,
     resetDerivation,
@@ -32,8 +34,10 @@ export function useRegexPipeline() {
     setTimeout(() => {
       try {
         const nfa = regexToNFA(regexInput.trim());
+        const dfa = nfaToDFA(nfa);
         const cfg = nfaToCFG(nfa);
         setNFA(nfa);
+        setDFA(dfa);
         setCFG(cfg);
         setPipelineStatus('success');
         setError(null);
@@ -45,7 +49,8 @@ export function useRegexPipeline() {
         setPipelineStatus('error');
       }
     }, 50);
-  }, [regexInput, reset, setPipelineStatus, setNFA, setCFG, setError, resetDerivation]);
+  }, [regexInput, reset, setPipelineStatus, setNFA, setDFA, setCFG, setError, resetDerivation]);
 
   return { run };
 }
+

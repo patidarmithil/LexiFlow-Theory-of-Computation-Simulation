@@ -1,6 +1,7 @@
 /**
  * NFAVisualizer.tsx
  * React Flow canvas with Dagre-computed left-to-right layout.
+ * Supports toggling between ε-NFA and DFA views.
  */
 import { useEffect, useMemo } from 'react';
 import {
@@ -19,6 +20,7 @@ import dagre from 'dagre';
 import NFANode from './NFANode';
 import NFAEdge from './NFAEdge';
 import type { NFA } from '../../lib/types';
+import { useAppStore } from '../../store/appStore';
 
 const nodeTypes = { nfaState: NFANode };
 const edgeTypes = { nfaTransition: NFAEdge };
@@ -28,24 +30,21 @@ const edgeTypes = { nfaTransition: NFAEdge };
 const NODE_WIDTH = 56;
 const NODE_HEIGHT = 56;
 
-function computeLayout(nfa: NFA): { nodes: Node[]; edges: Edge[] } {
+function computeLayout(nfa: NFA, isDFA = false): { nodes: Node[]; edges: Edge[] } {
   const g = new dagre.graphlib.Graph({ multigraph: true });
   g.setGraph({ rankdir: 'LR', nodesep: 40, ranksep: 70, edgesep: 20 });
   g.setDefaultEdgeLabel(() => ({}));
 
-  // Add nodes to dagre
   for (const state of nfa.states) {
     g.setNode(state.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
   }
 
-  // Add edges to dagre (use unique edge keys for multigraph)
   nfa.transitions.forEach((t, i) => {
     g.setEdge(t.from, t.to, {}, `e${i}`);
   });
 
   dagre.layout(g);
 
-  // Build React Flow nodes
   const rfNodes: Node[] = nfa.states.map((state) => {
     const pos = g.node(state.id);
     return {
@@ -59,12 +58,12 @@ function computeLayout(nfa: NFA): { nodes: Node[]; edges: Edge[] } {
         label: state.id,
         isStart: state.isStart,
         isAccept: state.isAccept,
+        isDFAMode: isDFA,
       },
     };
   });
 
-  // Build React Flow edges
-  // Group parallel transitions (same from→to) for label merging
+  // Group parallel transitions for label merging
   const edgeMap = new Map<string, string[]>();
   for (const t of nfa.transitions) {
     const key = `${t.from}→${t.to}`;
@@ -79,15 +78,18 @@ function computeLayout(nfa: NFA): { nodes: Node[]; edges: Edge[] } {
     const [from, to] = key.split('→');
     const label = symbols.join(', ');
     const isEpsilon = symbols.every((s) => s === 'ε');
+    const isSelfLoop = from === to;
     rfEdges.push({
       id: `edge-${edgeIdx++}`,
       source: from,
       target: to,
       type: 'nfaTransition',
-      data: { label, isEpsilon },
-      // Self-loops need a curved offset
-      ...(from === to ? { sourceHandle: 'top', targetHandle: 'top' } : {}),
+      data: { label, isEpsilon, isDFAMode: isDFA, source: from, target: to },
+      ...(isSelfLoop
+        ? { sourceHandle: 'top-source', targetHandle: 'top' }
+        : {}),
     });
+
   }
 
   return { nodes: rfNodes, edges: rfEdges };
@@ -99,53 +101,61 @@ interface NFAVisualizerProps {
   nfa: NFA;
 }
 
-import { useAppStore } from '../../store/appStore';
-
 export default function NFAVisualizer({ nfa }: NFAVisualizerProps) {
-  const { hoveredRule, currentStep, derivationSteps, derivationFound } = useAppStore();
+  const {
+    hoveredRule,
+    currentStep,
+    derivationSteps,
+    derivationFound,
+    dfa,
+    canvasView,
+    setCanvasView,
+  } = useAppStore();
+
+  const activeAutomaton = canvasView === 'dfa' && dfa ? dfa : nfa;
+  const isDFA = canvasView === 'dfa';
 
   const { nodes: layoutNodes, edges: layoutEdges } = useMemo(
-    () => computeLayout(nfa),
-    [nfa]
+    () => computeLayout(activeAutomaton, isDFA),
+    [activeAutomaton, isDFA]
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(layoutEdges);
 
-  // Compute active state based on derivation
+  // Re-sync layout when switching NFA ↔ DFA
+  useEffect(() => {
+    setNodes(layoutNodes);
+    setEdges(layoutEdges);
+  }, [layoutNodes, layoutEdges, setNodes, setEdges]);
+
+  // Active state highlight (NFA derivation trace only)
   const activeState = useMemo(() => {
+    if (isDFA) return null;
     if (currentStep >= 0 && currentStep < derivationSteps.length) {
       const step = derivationSteps[currentStep];
       const match = step.sententialForm.match(/Q\d+/);
-      if (match) {
-        return 'q' + match[0].substring(1);
-      }
-      if (derivationFound && currentStep === derivationSteps.length - 1) {
-         // Final accept state could be marked active if desired, but we'll leave it as null
-         // because there's no non-terminal left.
-      }
+      if (match) return 'q' + match[0].substring(1);
     }
     return null;
-  }, [currentStep, derivationSteps, derivationFound]);
+  }, [currentStep, derivationSteps, derivationFound, isDFA]);
 
-  // Sync Nodes
+  // Sync node highlight
   useEffect(() => {
     setNodes((nds) =>
       nds.map((n) => {
-        let isActive = n.id === activeState;
+        const isActive = n.id === activeState;
         let isHovered = false;
 
-        if (hoveredRule) {
+        if (!isDFA && hoveredRule) {
           const [lhsNT, rhsStr] = hoveredRule.split('->');
           const sourceState = 'q' + lhsNT.substring(1);
-          
           if (n.id === sourceState) isHovered = true;
-
           if (rhsStr !== 'ε') {
-             const parts = rhsStr.split(' ');
-             const targetNT = parts.length === 2 ? parts[1] : parts[0];
-             const targetState = 'q' + targetNT.substring(1);
-             if (n.id === targetState) isHovered = true;
+            const parts = rhsStr.split(' ');
+            const targetNT = parts.length === 2 ? parts[1] : parts[0];
+            const targetState = 'q' + targetNT.substring(1);
+            if (n.id === targetState) isHovered = true;
           }
         }
 
@@ -155,71 +165,95 @@ export default function NFAVisualizer({ nfa }: NFAVisualizerProps) {
         return n;
       })
     );
-  }, [activeState, hoveredRule, setNodes]);
+  }, [activeState, hoveredRule, setNodes, isDFA]);
 
-  // Sync Edges
+  // Sync edge highlight
   useEffect(() => {
     setEdges((eds) =>
       eds.map((e) => {
         let isHovered = false;
-
-        if (hoveredRule) {
-           const [lhsNT, rhsStr] = hoveredRule.split('->');
-           const sourceState = 'q' + lhsNT.substring(1);
-           
-           if (e.source === sourceState && rhsStr !== 'ε') {
-              const parts = rhsStr.split(' ');
-              let symbol = '';
-              let targetNT = '';
-              
-              if (parts.length === 2) {
-                 symbol = parts[0];
-                 targetNT = parts[1];
-              } else if (parts.length === 1) {
-                 symbol = 'ε';
-                 targetNT = parts[0];
-              }
-              
-              const targetState = 'q' + targetNT.substring(1);
-              
-              if (e.target === targetState) {
-                 const labels = (e.data?.label as string).split(', ');
-                 if (labels.includes(symbol)) {
-                    isHovered = true;
-                 }
-              }
-           }
+        if (!isDFA && hoveredRule) {
+          const [lhsNT, rhsStr] = hoveredRule.split('->');
+          const sourceState = 'q' + lhsNT.substring(1);
+          if (e.source === sourceState && rhsStr !== 'ε') {
+            const parts = rhsStr.split(' ');
+            let symbol = '';
+            let targetNT = '';
+            if (parts.length === 2) { symbol = parts[0]; targetNT = parts[1]; }
+            else if (parts.length === 1) { symbol = 'ε'; targetNT = parts[0]; }
+            const targetState = 'q' + targetNT.substring(1);
+            if (e.target === targetState) {
+              const labels = (e.data?.label as string).split(', ');
+              if (labels.includes(symbol)) isHovered = true;
+            }
+          }
         }
-
         if (e.data?.isHovered !== isHovered) {
           return { ...e, data: { ...e.data, isHovered } };
         }
         return e;
       })
     );
-  }, [hoveredRule, setEdges]);
+  }, [hoveredRule, setEdges, isDFA]);
 
   return (
     <div className="w-full h-full relative group">
       {/* Legend & Stats Overlay */}
       <div className="absolute top-4 left-4 z-20 flex flex-col gap-3 pointer-events-none">
         <div className="flex gap-2">
-          <StatChip label="States" value={nfa.states.length} />
-          <StatChip label="Transitions" value={nfa.transitions.length} />
+          <StatChip label="States" value={activeAutomaton.states.length} />
+          <StatChip label="Transitions" value={activeAutomaton.transitions.length} />
         </div>
         <div className="flex flex-col gap-2 p-3 bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-sm">
-          <LegendItem variant="indigo" label="Start State" />
-          <LegendItem variant="emerald" label="Accept State" />
-          <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider pl-1">
-             <span className="w-5 border-t-2 border-dashed border-slate-300" />
-             <span>ε-transition</span>
-          </div>
+          {isDFA ? (
+            <>
+              <LegendItem variant="amber" label="Start State" />
+              <LegendItem variant="emerald" label="Accept State" />
+              <div className="flex items-center gap-2 text-[10px] font-bold text-amber-500 uppercase tracking-wider pl-1">
+                <span>⬡ Deterministic</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <LegendItem variant="indigo" label="Start State" />
+              <LegendItem variant="emerald" label="Accept State" />
+              <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider pl-1">
+                <span className="w-5 border-t-2 border-dashed border-slate-300" />
+                <span>ε-transition</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
+      {/* NFA / DFA Toggle */}
+      {dfa && (
+        <div className="absolute top-4 right-4 z-20 flex p-1 bg-white rounded-xl border border-slate-200 shadow-sm">
+          <button
+            onClick={() => setCanvasView('nfa')}
+            className={`px-4 py-1.5 rounded-lg text-[11px] font-extrabold uppercase tracking-widest transition-all ${
+              !isDFA
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            ε-NFA
+          </button>
+          <button
+            onClick={() => setCanvasView('dfa')}
+            className={`px-4 py-1.5 rounded-lg text-[11px] font-extrabold uppercase tracking-widest transition-all ${
+              isDFA
+                ? 'bg-amber-500 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            DFA
+          </button>
+        </div>
+      )}
+
       {/* Canvas */}
       <div className="w-full h-full bg-slate-50/50 relative">
-        {/* Custom arrowhead marker */}
         <svg style={{ position: 'absolute', width: 0, height: 0 }}>
           <defs>
             <marker
@@ -230,7 +264,7 @@ export default function NFAVisualizer({ nfa }: NFAVisualizerProps) {
               refY="3.5"
               orient="auto"
             >
-              <polygon points="0 0, 10 3.5, 0 7" fill="#4f46e5" />
+              <polygon points="0 0, 10 3.5, 0 7" fill={isDFA ? '#f59e0b' : '#4f46e5'} />
             </marker>
           </defs>
         </svg>
@@ -260,15 +294,23 @@ export default function NFAVisualizer({ nfa }: NFAVisualizerProps) {
   );
 }
 
-function LegendItem({ variant, label }: { variant: 'indigo' | 'emerald'; label: string }) {
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function LegendItem({ variant, label }: { variant: 'indigo' | 'emerald' | 'amber'; label: string }) {
   const styles = {
     indigo: 'bg-indigo-50 text-indigo-700 border-indigo-100',
     emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    amber: 'bg-amber-50 text-amber-700 border-amber-100',
+  };
+  const dotStyles = {
+    indigo: 'bg-indigo-500',
+    emerald: 'bg-emerald-500',
+    amber: 'bg-amber-500',
   };
 
   return (
     <span className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border flex items-center gap-2 ${styles[variant]}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${variant === 'indigo' ? 'bg-indigo-500' : 'bg-emerald-500'}`} />
+      <span className={`w-1.5 h-1.5 rounded-full ${dotStyles[variant]}`} />
       {label}
     </span>
   );
