@@ -120,7 +120,6 @@ export default function NFAVisualizer({ nfa }: NFAVisualizerProps) {
     currentStep,
     derivationSteps,
     derivationFound,
-    dfa,
   } = useAppStore();
 
   const activeAutomaton = nfa;
