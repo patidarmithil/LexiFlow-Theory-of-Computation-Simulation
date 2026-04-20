@@ -76,20 +76,33 @@ function computeLayout(nfa: NFA, isDFA = false): { nodes: Node[]; edges: Edge[] 
   const rfEdges: Edge[] = [];
   for (const [key, symbols] of edgeMap.entries()) {
     const [from, to] = key.split('→');
+    const reverseKey = `${to}→${from}`;
+    const isSelfLoop = from === to;
+    
+    // Detect bidirectional: if there's a transition in the opposite direction
+    const isBidirectional = !isSelfLoop && edgeMap.has(reverseKey);
+    
     const label = symbols.join(', ');
     const isEpsilon = symbols.every((s) => s === 'ε');
-    const isSelfLoop = from === to;
+    
     rfEdges.push({
       id: `edge-${edgeIdx++}`,
       source: from,
       target: to,
       type: 'nfaTransition',
-      data: { label, isEpsilon, isDFAMode: isDFA, source: from, target: to },
+      data: { 
+        label, 
+        isEpsilon, 
+        isDFAMode: isDFA, 
+        source: from, 
+        target: to,
+        // If bidirectional, apply curvature to separate paths
+        curvature: isBidirectional ? 35 : 0 
+      },
       ...(isSelfLoop
         ? { sourceHandle: 'top-source', targetHandle: 'top' }
         : {}),
     });
-
   }
 
   return { nodes: rfNodes, edges: rfEdges };
@@ -108,12 +121,10 @@ export default function NFAVisualizer({ nfa }: NFAVisualizerProps) {
     derivationSteps,
     derivationFound,
     dfa,
-    canvasView,
-    setCanvasView,
   } = useAppStore();
 
-  const activeAutomaton = canvasView === 'dfa' && dfa ? dfa : nfa;
-  const isDFA = canvasView === 'dfa';
+  const activeAutomaton = nfa;
+  const isDFA = false;
 
   const { nodes: layoutNodes, edges: layoutEdges } = useMemo(
     () => computeLayout(activeAutomaton, isDFA),
@@ -205,52 +216,14 @@ export default function NFAVisualizer({ nfa }: NFAVisualizerProps) {
           <StatChip label="Transitions" value={activeAutomaton.transitions.length} />
         </div>
         <div className="flex flex-col gap-2 p-3 bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-sm">
-          {isDFA ? (
-            <>
-              <LegendItem variant="amber" label="Start State" />
-              <LegendItem variant="emerald" label="Accept State" />
-              <div className="flex items-center gap-2 text-[10px] font-bold text-amber-500 uppercase tracking-wider pl-1">
-                <span>⬡ Deterministic</span>
-              </div>
-            </>
-          ) : (
-            <>
-              <LegendItem variant="indigo" label="Start State" />
-              <LegendItem variant="emerald" label="Accept State" />
-              <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider pl-1">
-                <span className="w-5 border-t-2 border-dashed border-slate-300" />
-                <span>ε-transition</span>
-              </div>
-            </>
-          )}
+          <LegendItem variant="indigo" label="Start State" />
+          <LegendItem variant="emerald" label="Accept State" />
+          <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider pl-1">
+            <span className="w-5 border-t-2 border-dashed border-slate-300" />
+            <span>ε-transition</span>
+          </div>
         </div>
       </div>
-
-      {/* NFA / DFA Toggle */}
-      {dfa && (
-        <div className="absolute top-4 right-4 z-20 flex p-1 bg-white rounded-xl border border-slate-200 shadow-sm">
-          <button
-            onClick={() => setCanvasView('nfa')}
-            className={`px-4 py-1.5 rounded-lg text-[11px] font-extrabold uppercase tracking-widest transition-all ${
-              !isDFA
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-600'
-            }`}
-          >
-            ε-NFA
-          </button>
-          <button
-            onClick={() => setCanvasView('dfa')}
-            className={`px-4 py-1.5 rounded-lg text-[11px] font-extrabold uppercase tracking-widest transition-all ${
-              isDFA
-                ? 'bg-amber-500 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-600'
-            }`}
-          >
-            DFA
-          </button>
-        </div>
-      )}
 
       {/* Canvas */}
       <div className="w-full h-full bg-slate-50/50 relative">
@@ -264,7 +237,7 @@ export default function NFAVisualizer({ nfa }: NFAVisualizerProps) {
               refY="3.5"
               orient="auto"
             >
-              <polygon points="0 0, 10 3.5, 0 7" fill={isDFA ? '#f59e0b' : '#4f46e5'} />
+              <polygon points="0 0, 10 3.5, 0 7" fill="#4f46e5" />
             </marker>
           </defs>
         </svg>

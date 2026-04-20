@@ -30,22 +30,11 @@ export default function App() {
 
         {/* Centered Input Bar */}
         <div className="flex-1 flex justify-center w-full min-w-0">
-          <div className="w-full max-w-3xl min-w-0">
+          <div className="w-full max-w-5xl min-w-0">
             <RegexInput />
           </div>
         </div>
 
-        <div className="hidden xl:flex items-center gap-6 shrink-0">
-          <div className="flex flex-col items-end gap-0.5">
-            <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-[0.2em]">Environment</span>
-            <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">Client-Side</span>
-          </div>
-          <div className="w-[1px] h-8 bg-slate-200" />
-          <div className="flex flex-col items-start gap-0.5">
-            <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-[0.2em]">Stack</span>
-            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Vite + TS</span>
-          </div>
-        </div>
 
       </header>
 

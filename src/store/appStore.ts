@@ -17,9 +17,6 @@ interface AppState {
   dfa: NFA | null;
   cfg: CFG | null;
 
-  // ── Canvas view ───────────────────────────────────────────────
-  canvasView: 'nfa' | 'dfa';
-
   // ── Derivation ────────────────────────────────────────────────
   derivationSteps: DerivationStep[];
   currentStep: number;        // index of the currently displayed step
@@ -41,7 +38,6 @@ interface AppState {
   setNFA: (nfa: NFA) => void;
   setDFA: (dfa: NFA) => void;
   setCFG: (cfg: CFG) => void;
-  setCanvasView: (view: 'nfa' | 'dfa') => void;
   setPipelineStatus: (s: PipelineStatus) => void;
   setError: (e: string | null) => void;
   setDerivation: (
@@ -72,7 +68,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   nfa: null,
   dfa: null,
   cfg: null,
-  canvasView: 'nfa',
   derivationSteps: [],
   currentStep: -1,
   isPlaying: false,
@@ -89,7 +84,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   setNFA: (nfa) => set({ nfa }),
   setDFA: (dfa) => set({ dfa }),
   setCFG: (cfg) => set({ cfg }),
-  setCanvasView: (view) => set({ canvasView: view }),
   setPipelineStatus: (s) => set({ pipelineStatus: s }),
   setError: (e) => set({ error: e }),
   setDerivation: (steps, found, reason) =>
@@ -133,12 +127,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       nfa: null,
       dfa: null,
       cfg: null,
-      canvasView: 'nfa',
-      derivationSteps: [],
-      currentStep: -1,
-      isPlaying: false,
-      derivationFound: false,
-      derivationReason: '',
       pipelineStatus: 'idle',
       derivationStatus: 'idle',
       error: null,

@@ -13,7 +13,6 @@ const EXAMPLES = [
   { label: '(a|b)*', value: '(a|b)*' },
   { label: 'a*b+',   value: 'a*b+' },
   { label: '(a|b)*c', value: '(a|b)*c' },
-  { label: 'ab?c',   value: 'ab?c' },
   { label: '(ab)+',  value: '(ab)+' },
 ];
 
@@ -30,9 +29,9 @@ export default function RegexInput() {
     <div className="flex flex-col gap-3 items-center">
       <div className="flex items-center gap-4 w-full">
         {/* Label (subtle) */}
-        <div className="hidden xl:flex items-center gap-2 shrink-0">
-          <FlaskConical size={14} className="text-indigo-500" />
-          <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]" style={{ fontFamily: 'var(--font-heading)' }}>Workspace</h2>
+        <div className="hidden xl:flex items-center gap-2.5 shrink-0">
+          <FlaskConical size={18} className="text-indigo-500" />
+          <h2 className="text-[12px] font-bold text-slate-400 uppercase tracking-[0.2em]" style={{ fontFamily: 'var(--font-heading)' }}>Workspace</h2>
         </div>
 
         {/* Input area */}
@@ -58,7 +57,7 @@ export default function RegexInput() {
               spellCheck={false}
               autoComplete="off"
               className="
-                w-full bg-transparent px-4 py-2 text-sm mono text-slate-800
+                w-full bg-transparent px-4 py-2.5 text-base mono text-slate-800
                 placeholder:text-slate-300 outline-none
               "
               aria-label="Regular expression input"
@@ -70,13 +69,13 @@ export default function RegexInput() {
         <Button
           id="visualize-btn"
           variant="primary"
-          size="md"
+          size="lg"
           onClick={run}
           loading={pipelineStatus === 'processing'}
           disabled={!regexInput.trim()}
           className="shrink-0"
         >
-          <Sparkles size={16} />
+          <Sparkles size={18} />
           <span>Visualize</span>
         </Button>
       </div>

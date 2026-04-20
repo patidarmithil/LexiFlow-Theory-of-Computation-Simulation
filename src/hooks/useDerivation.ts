@@ -58,7 +58,7 @@ export function useDerivation() {
           setDerivation(
             [],
             false,
-            `"${testString || 'ε'}" is not in the language (DFA rejects).`
+            `"${testString || 'ε'}" is not in the language (Automaton rejects).`
           );
           setDerivationStatus('success');
           return;
@@ -75,7 +75,7 @@ export function useDerivation() {
           setDerivation(
             [],
             true,
-            'Accepted by DFA. Grammar trace unavailable (search limit reached).'
+            'Accepted. Grammar trace unavailable (search limit reached).'
           );
         }
         setDerivationStatus('success');
