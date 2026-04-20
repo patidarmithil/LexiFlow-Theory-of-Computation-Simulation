@@ -147,21 +147,21 @@ function optionalFrag(f: Fragment): Fragment {
   };
 }
 
-/** Deep-clone a fragment, assigning fresh state IDs to all states inside it. */
-function cloneFrag(f: Fragment): Fragment {
-  const idMap = new Map<string, string>();
-  const newId = (old: string) => {
-    if (!idMap.has(old)) idMap.set(old, freshId());
-    return idMap.get(old)!;
-  };
+// /** Deep-clone a fragment, assigning fresh state IDs to all states inside it. */
+// function cloneFrag(f: Fragment): Fragment {
+//   const idMap = new Map<string, string>();
+//   const newId = (old: string) => {
+//     if (!idMap.has(old)) idMap.set(old, freshId());
+//     return idMap.get(old)!;
+//   };
 
-  return {
-    start: newId(f.start),
-    accept: newId(f.accept),
-    states: f.states.map(s => makeState(newId(s.id))),
-    transitions: f.transitions.map(t => makeTransition(newId(t.from), newId(t.to), t.symbol)),
-  };
-}
+//   return {
+//     start: newId(f.start),
+//     accept: newId(f.accept),
+//     states: f.states.map(s => makeState(newId(s.id))),
+//     transitions: f.transitions.map(t => makeTransition(newId(t.from), newId(t.to), t.symbol)),
+//   };
+// }
 
 // ─── Main builder ─────────────────────────────────────────────────────────────
 
