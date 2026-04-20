@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+/* ── Google Fonts ────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
+
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: 'Outfit', var(--font-sans);
+
+  /* ── Color tokens ────────────────────────────────────────── */
+  --clr-accent-blue:   #3b82f6;
+  --clr-accent-indigo: #6366f1;
+  --clr-accent-violet: #8b5cf6;
+  --clr-accent-rose:   #f43f5e;
+  --clr-accent-emerald:#10b981;
+  --clr-accent-amber:  #f59e0b;
+
+  --clr-glass-bg:      rgba(255, 255, 255, 0.45);
+  --clr-glass-border:  rgba(255, 255, 255, 0.7);
+  --clr-glass-shadow:  rgba(15, 23, 42, 0.08);
+
+  --clr-text-primary:  #0f172a; /* Slate 900 */
+  --clr-text-secondary:#475569; /* Slate 600 */
+  --clr-text-muted:    #94a3b8; /* Slate 400 */
+
+  /* ── Blur / Radius / Shadow ──────────────────────────────── */
+  --blur-glass:  blur(24px) saturate(200%);
+  --radius-card: 24px;
+  --shadow-card: 0 20px 60px -12px var(--clr-glass-shadow), 0 8px 16px -8px var(--clr-glass-shadow);
+  --shadow-btn:  0 4px 20px rgba(59,130,246,0.3);
+}
+
+/* Premium Label Utility */
+.premium-label {
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--clr-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+
+
+/* ── Base reset ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--clr-text-secondary);
+  background: white;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Custom Scrollbar ─────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 5px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ── Mesh gradient background ────────────────────────────── */
+.mesh-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: 
+    radial-gradient(circle at 0% 0%, #e0e7ff 0%, transparent 40%),
+    radial-gradient(circle at 100% 0%, #f5f3ff 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, #eff6ff 0%, transparent 40%),
+    radial-gradient(circle at 0% 100%, #f0fdf4 0%, transparent 40%),
+    #ffffff;
+}
+
+/* ── React Flow overrides ────────────────────────────────── */
+.react-flow__background { background: transparent !important; }
+.react-flow__attribution { display: none !important; }
+.react-flow__controls {
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+  border: 1px solid rgba(0,0,0,0.05) !important;
+}
+.react-flow__controls-button {
+  background: white !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
